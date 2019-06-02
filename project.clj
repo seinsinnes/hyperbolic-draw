@@ -26,7 +26,7 @@
             {:id "optimized"
              :source-paths ["src"]
              :compiler
-             {:main "hello_quil.core"
+             {:main "hyperbolic_draw.core"
               :output-to "resources/public/js/main.js"
               :output-dir "resources/public/js/optimized"
               :asset-path "js/optimized"

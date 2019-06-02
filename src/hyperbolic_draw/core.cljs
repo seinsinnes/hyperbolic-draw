@@ -1,4 +1,4 @@
-(ns hello-quil.core
+(ns hyperbolic-draw.core
   (:require [quil.core :as q :include-macros true]
             [quil.middleware :as m]))
 
@@ -90,8 +90,8 @@
 
 
 (defn ^:export run-sketch []
-  (q/defsketch hello-quil
-     :host "hello-quil"
+  (q/defsketch hyperbolic-draw
+     :host "hyperbolic-draw"
      :size [500 500]
      :setup setup
      :mouse-clicked mouse-clicked
