@@ -81,6 +81,9 @@
 (defn math-add [a b]
   (.add js/math a b))
 
+(defn math-subtract [a b]
+  (.subtract js/math a b))
+
 (defn math-multiply [a b]
   (.multiply js/math a b))
 
@@ -95,17 +98,121 @@
   )
 )
 
+(defn moebius-translate-a [spt ept bpt1 bpt2]
+  (let [z1 (.complex js/math (first (:pos bpt1)) (second (:pos bpt1)))
+        z2 (.complex js/math (first (:pos bpt2)) (second (:pos bpt2)))
+        z3 (.complex js/math (first spt) (second spt))
+        z4 (.complex js/math (first ept) (second ept))]
+    (math-multiply -2
+                   (math-divide
+                    (math-add
+                     (math-subtract
+                      (math-subtract
+                       (math-multiply z1 z2)
+                       (math-multiply z1 z3))
+                      (math-multiply z2 z3))
+                     (math-multiply z3 z4))
+                    (math-add
+                     (math-subtract
+                      (math-subtract
+                       (math-subtract
+                        (math-subtract
+                         (math-multiply 2
+                                        (math-multiply z1 z2))
+                         (math-multiply z1 z3))
+                        (math-multiply z2 z3))
+                       (math-multiply z1 z4))
+                      (math-multiply z2 z4))
+                     (math-multiply
+                      (math-multiply 2 z3) z4))))))
+
+(defn moebius-translate-b [spt ept bpt1 bpt2]
+  (let [z1 (.complex js/math (first (:pos bpt1)) (second (:pos bpt1)))
+        z2 (.complex js/math (first (:pos bpt2)) (second (:pos bpt2)))
+        z3 (.complex js/math (first spt) (second spt))
+        z4 (.complex js/math (first ept) (second ept))]
+    (math-multiply -2
+                   (math-divide
+                    (math-multiply
+                     (math-multiply z1 z2)
+                     (math-subtract z3 z4))
+                    (math-add
+                     (math-subtract
+                      (math-subtract
+                       (math-subtract
+                        (math-subtract
+                         (math-multiply
+                          (math-multiply 2 z1) z2)
+                         (math-multiply z1 z3))
+                        (math-multiply z2 z3))
+                       (math-multiply z1 z4))
+                      (math-multiply z2 z4))
+                      (math-multiply
+                       (math-multiply 2 z3) z4))))))
+
+(defn moebius-translate-c [spt ept bpt1 bpt2]
+  (let [z1 (.complex js/math (first (:pos bpt1)) (second (:pos bpt1)))
+        z2 (.complex js/math (first (:pos bpt2)) (second (:pos bpt2)))
+        z3 (.complex js/math (first spt) (second spt))
+        z4 (.complex js/math (first ept) (second ept))]
+    (math-multiply 2
+                   (math-divide
+                    (math-subtract z3 z4)
+                    (math-add
+                     (math-subtract
+                      (math-subtract
+                       (math-subtract
+                        (math-subtract
+                         (math-multiply (math-multiply 2 z1) z2)
+                         (math-multiply z1 z3))
+                        (math-multiply z2 z3))
+                       (math-multiply z1 z4))
+                      (math-multiply z2 z4))
+                     (math-multiply 2 (math-multiply z3 z4)))))))
+
+(defn moebius-translate-d [spt ept bpt1 bpt2]
+  (let [z1 (.complex js/math (first (:pos bpt1)) (second (:pos bpt1)))
+        z2 (.complex js/math (first (:pos bpt2)) (second (:pos bpt2)))
+        z3 (.complex js/math (first spt) (second spt))
+        z4 (.complex js/math (first ept) (second ept))]
+    (math-multiply -2
+                   (math-divide
+                    (math-add
+                     (math-subtract
+                      (math-subtract
+                       (math-multiply z1 z2)
+                       (math-multiply z1 z4))
+                      (math-multiply z2 z4))
+                     (math-multiply z3 z4))
+                    (math-add
+                     (math-subtract
+                      (math-subtract
+                       (math-subtract
+                        (math-subtract
+                         (math-multiply 2
+                                        (math-multiply z1 z2))
+                         (math-multiply z1 z3))
+                        (math-multiply z2 z3))
+                       (math-multiply z1 z4))
+                      (math-multiply z2 z4))
+                     (math-multiply
+                      (math-multiply 2 z3) z4))))))
+
 
 (defn mouse-dragged [state event]
-  (let [ end-pt (from-screenspace-to-normalspace [(:x event) (:y event)] )
-         start-pt (from-screenspace-to-normalspace [(:p-x event) (:p-y event)] )]
-    (let [ dx ( - (first end-pt) (first start-pt))
-          dy ( - (second end-pt) (second start-pt))]
-      ;(println (moebius 2 1 -1 2 {:pos end-pt}))
-      ;(println (:points state))
-      (assoc state :points (map (partial moebius 1 0.2 0.2 1) (:points state)))
-      ;(assoc state :points (map (partial addPt [dx dy]) (:points state) ))
-      )))
+  (let [end-pt (from-screenspace-to-normalspace [(:x event) (:y event)])
+        start-pt (from-screenspace-to-normalspace [(:p-x event) (:p-y event)])]
+    (if (and (not= (first end-pt) (first start-pt)) (not= (second end-pt) (second start-pt)))
+      (let [center (poincareArcCenterFromLine start-pt end-pt)]
+        (let [radius (poincareArcRadiusFromCenter center)]
+          (let [bpts (poincareInfinityPointsFromGeodesic center radius)]
+            (let [a (moebius-translate-a start-pt end-pt (first bpts) (second bpts))
+                  b (moebius-translate-b start-pt end-pt (first bpts) (second bpts))
+                  c (moebius-translate-c start-pt end-pt (first bpts) (second bpts))
+                  d (moebius-translate-d start-pt end-pt (first bpts) (second bpts))]
+              (assoc state :points (map (partial moebius a b c d) (:points state)))
+              ))))
+      state)))
 
 (defn draw-geodesic [pt1 pt2]
   (let [spt1  (from-normalspace-to-screenspace pt1)
