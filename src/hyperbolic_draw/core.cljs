@@ -71,9 +71,11 @@
 )
 
 (defn mouse-clicked [state event]
-  (if-let [index (get-lamp-index)]
-    (assoc state :points (conj (:points state) {:pos index }))
-    state))
+  (if (not (:dragged state))
+    (if-let [index (get-lamp-index)]
+      (assoc state :points (conj (:points state) {:pos index }))
+      state)
+    (assoc state :dragged false)))
 
 (defn addPt [pt1 pt2]
   {:pos [(+ (first pt1) (first (:pos pt2))) (+ (second pt1) (second (:pos pt2)))]}
@@ -203,15 +205,21 @@
   (let [end-pt (from-screenspace-to-normalspace [(:x event) (:y event)])
         start-pt (from-screenspace-to-normalspace [(:p-x event) (:p-y event)])]
     (if (and (not= (first end-pt) (first start-pt)) (not= (second end-pt) (second start-pt)))
-      (let [center (poincareArcCenterFromLine start-pt end-pt)]
+      (let [center (poincareArcCenterFromLine start-pt end-pt)
+            new-state (assoc state :dragged true)]
+        (if (and (not= (first center) ##Inf) (not= (second center) ##Inf))
         (let [radius (poincareArcRadiusFromCenter center)]
           (let [bpts (poincareInfinityPointsFromGeodesic center radius)]
             (let [a (moebius-translate-a start-pt end-pt (first bpts) (second bpts))
                   b (moebius-translate-b start-pt end-pt (first bpts) (second bpts))
                   c (moebius-translate-c start-pt end-pt (first bpts) (second bpts))
                   d (moebius-translate-d start-pt end-pt (first bpts) (second bpts))]
-              (assoc state :points (map (partial moebius a b c d) (:points state)))
-              ))))
+              ;(println [start-pt end-pt])
+              ;(println center)
+              ;(println radius)
+              ;(println (map (juxt (partial #(aget %2 %1) "re") (partial #(aget %2 %1) "im")) [a b c d]))
+              (assoc new-state :points (map (partial moebius a b c d) (:points state))))))
+          new-state))
       state)))
 
 (defn draw-geodesic [pt1 pt2]
