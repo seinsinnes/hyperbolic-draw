@@ -5,8 +5,17 @@
   </head>
   <body>
     <div id="hyperbolic-draw"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.1.0/math.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.2.0/math.js"></script>
     <script src="js/main.js"></script>
+    <script>
+      var element = document.getElementById("hyperbolic-draw");
+      element.style.height = window.visualViewport.height - element.offsetTop -10 +"px";
+      element.style.width = window.innerWidth +"px";
+      function noScroll() {
+        window.scrollTo(0, 0);
+      }
+      window.addEventListener('scroll', noScroll);
+    </script>
     <script>hyperbolic_draw.core.run_sketch()</script>
   </body>
 </html>

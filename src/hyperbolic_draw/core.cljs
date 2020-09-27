@@ -1,6 +1,7 @@
 (ns hyperbolic-draw.core
   (:require [quil.core :as q :include-macros true]
-            [quil.middleware :as m]))
+            [quil.middleware :as m]
+            [clojure.string :as str]))
 
 (def point-size 6)
 
@@ -29,6 +30,7 @@
 ;;  (if-let [index (get-lamp-index)]
 ;;    (assoc state index (create-color (q/millis)))
 ;;    state))
+
 
 (defn poincareArcCenterFromLine [pt1 pt2]
   (let [u0 (first pt1)
@@ -254,13 +256,20 @@
     (doseq [[pt1 pt2] (partition 2 1 (:points state))]
         (draw-geodesic (:pos pt1) (:pos pt2)))))
 
+(defn parse-int [s]
+  (js/parseInt (re-find #"[0-9]*" s)))
 
 (defn ^:export run-sketch []
-  (q/defsketch hyperbolic-draw
-     :host "hyperbolic-draw"
-     :size [500 500]
-     :setup setup
-     :mouse-clicked mouse-clicked
-     :mouse-dragged mouse-dragged
-     :draw draw-state
-     :middleware [m/fun-mode]))
+  (let [targetDiv (.getElementById js/document "hyperbolic-draw")
+        targetDivStyle (.-style targetDiv)
+        divHeight (parse-int (.-height targetDivStyle))
+        divWidth (parse-int  (.-width targetDivStyle))
+        viewCircleRadius (min divHeight divWidth)]
+    (q/defsketch hyperbolic-draw
+      :host "hyperbolic-draw"
+      :size [viewCircleRadius viewCircleRadius]
+      :setup setup
+      :mouse-clicked mouse-clicked
+      :mouse-dragged mouse-dragged
+      :draw draw-state
+      :middleware [m/fun-mode])))
